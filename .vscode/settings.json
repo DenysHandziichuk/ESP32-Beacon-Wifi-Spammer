@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "esp_event.h": "c",
+        "nvs_flash.h": "c"
+    }
+}
