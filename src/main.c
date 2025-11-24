@@ -7,9 +7,12 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define MAX_SSIDS 15
+#define MAX_SSIDS 24
+#define BASE_NAME "fake_ssid" // SSID base name (changable)
+#define SSID_COUNT 21         // number of fake SSIDs (changable)
 
-static const char *BASE = "test"; // Changable (name of fake ssids)
+static char ssid_list[MAX_SSIDS][32];
+static uint8_t ssid_macs[MAX_SSIDS][6];
 
 typedef struct __attribute__((packed))
 {
@@ -42,9 +45,6 @@ typedef struct __attribute__((packed))
 
 } beacon_frame_t;
 
-static char ssid_list[MAX_SSIDS][32];
-static uint8_t ssid_macs[MAX_SSIDS][6];
-
 static void generate_ssids(void)
 {
     static const uint8_t oui[5][3] = {
@@ -54,10 +54,18 @@ static void generate_ssids(void)
         {0x00, 0x50, 0x56},
         {0x00, 0x1B, 0xFC}};
 
-    for (int i = 0; i < MAX_SSIDS; i++)
+    for (int i = 0; i < SSID_COUNT; i++)
     {
         uint32_t rnd = esp_random() % 10000;
-        snprintf(ssid_list[i], 32, "%s_%04lu", BASE, (unsigned long)rnd);
+
+        char short_name[21];
+        strncpy(short_name, BASE_NAME, sizeof(short_name) - 1);
+        short_name[sizeof(short_name) - 1] = '\0';
+
+        int n = snprintf(ssid_list[i], sizeof(ssid_list[i]), "%.*s_%04lu",
+                         20, short_name, (unsigned long)rnd);
+        if (n < 0 || n >= sizeof(ssid_list[i]))
+            ssid_list[i][sizeof(ssid_list[i]) - 1] = '\0';
 
         memcpy(ssid_macs[i], oui[i % 5], 3);
         ssid_macs[i][3] = (esp_random() >> 24) & 0xFF;
@@ -120,14 +128,13 @@ static void spam_task(void *arg)
     wifi_init_fast();
 
     beacon_frame_t frame;
-
     uint8_t channel = 1;
 
     while (1)
     {
         esp_wifi_set_channel(channel, WIFI_SECOND_CHAN_NONE);
 
-        for (int i = 0; i < MAX_SSIDS; i++)
+        for (int i = 0; i < SSID_COUNT; i++)
         {
             build_frame(&frame, ssid_list[i], ssid_macs[i], channel);
             esp_wifi_80211_tx(WIFI_IF_STA, &frame, sizeof(frame), false);
