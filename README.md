@@ -38,8 +38,7 @@ This repository provides a practical introduction to:
 To use this project, you need:
 
 - **ESP32 development board** (WROOM, WROVER, DevKitC, etc.)  
-- **ESP-IDF** (5.x or latest recommended version)  
-- **Python 3.x** (for ESP-IDF tools)  
+- **ESP-IDF** (5.x or latest recommended version)   
 - Basic understanding of:
   - C programming  
   - Wi-Fi fundamentals  
